@@ -54,7 +54,7 @@ sapper arena init
 export SAPPER_ARENA_TOKEN=...
 
 # recon lands as typed facts
-sapper fact "10.0.2.15 alive, ports 22,80,3306" -t "主机存活" -k host -d ip=10.0.2.15 -d os=linux
+sapper fact "10.0.2.15 alive, ports 22,80,3306" -t "host alive" -k host -d ip=10.0.2.15 -d os=linux
 sapper fact "80/tcp nginx 1.18 + php 7.2" -k service -d host=10.0.2.15 -d port=80 -d product=nginx -d version=1.18
 sapper fact "admin:admin123 logs into /admin" -k cred -d username=admin -d password=admin123
 

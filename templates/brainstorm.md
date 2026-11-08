@@ -18,10 +18,10 @@ and one ambitious/creative option.
 Return ONE raw JSON object and nothing else.
 
 ```json
-{"accepted": true, "data": {"options": [{"title": "短标题 (same language as goal)", "from": ["f001"], "description": "one-sentence summary of this approach", "doc": "detailed tradeoffs, risks, estimated effort, and what evidence it would produce", "effort": "low|medium|high"}]}}
+{"accepted": true, "data": {"options": [{"title": "short title (same language as goal)", "from": ["f001"], "description": "one-sentence summary of this approach", "doc": "detailed tradeoffs, risks, estimated effort, and what evidence it would produce", "effort": "low|medium|high"}]}}
 ```
 
-Each option's `title` should be in the SAME language as the goal (中文 goal → 中文 title).
+Each option's `title` should be in the SAME language as the goal (e.g. a Chinese goal → a Chinese title).
 
 If you cannot generate meaningful alternatives:
 ```json

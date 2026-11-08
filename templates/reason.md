@@ -40,11 +40,11 @@ If Goal is satisfied:
 
 If Goal is not satisfied and new intents should be proposed:
 ```json
-{"accepted": true, "data": {"intents": [{"title": "验证弱口令登录", "from": ["f001"], "description": "concrete next step in one sentence", "doc": "optional detailed markdown: exact commands, tool constraints, expected evidence, safety limits", "requires_confirmation": false}]}}
+{"accepted": true, "data": {"intents": [{"title": "verify weak-credential login", "from": ["f001"], "description": "concrete next step in one sentence", "doc": "optional detailed markdown: exact commands, tool constraints, expected evidence, safety limits", "requires_confirmation": false}]}}
 ```
 
 Each node has THREE documentation layers — use them correctly:
-- **`title`** (REQUIRED) — a short (2–10 字) human-readable label in the SAME language as the goal (中文 goal → 中文 title). Concrete: "端口扫描", "后台弱口令", "RCE已验证", "内网横向". Never repeat the description verbatim.
+- **`title`** (REQUIRED) — a short (2–10 chars) human-readable label in the SAME language as the goal (e.g. a Chinese goal → a Chinese title). Concrete: "port scan", "admin-panel weak creds", "RCE verified", "internal lateral movement". Never repeat the description verbatim.
 - **`description`** (REQUIRED) — a ONE-sentence gist. Shown in `sapper graph` and injected into every prompt. Keep it tight.
 - **`doc`** (OPTIONAL) — detailed markdown for the executor: exact commands, tool names + fallbacks, expected evidence, what NOT to touch. Read via `sapper doc <id>` only when needed. Use it for exploitation playbooks.
 

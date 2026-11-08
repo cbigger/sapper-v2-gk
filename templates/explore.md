@@ -41,7 +41,7 @@ sapper hint "<note>"                                 # leave a note for the comm
 
 When you are unsure HOW to attack what you found (technique, payload family,
 CVE for a fingerprint, privesc path), consult the knowledge base BEFORE
-improvising: `sapper kb search "thinkphp rce"` / `sapper kb search "linux 提权"`.
+improvising: `sapper kb search "thinkphp rce"` / `sapper kb search "linux privesc"`.
 Entries carry commands and methodology. Also add new knowledge back:
 `sapper kb add "..." -t <tag> --detail "..."` when you discover something
 the base doesn't cover.
@@ -74,7 +74,7 @@ Reject only when execution is clearly inappropriate:
 
 Normal return — the incremental fact this intent produced:
 ```json
-{"accepted": true, "data": {"title": "RCE已验证", "description": "one-sentence gist of what you confirmed", "kind": "vuln", "data": {"host": "10.0.2.15", "cve": "CVE-2021-41773", "status": "exploited"}, "doc": "optional detailed markdown: exact commands run, output, evidence", "deviations": [{"planned": "...", "actual": "...", "reason": "..."}]}}
+{"accepted": true, "data": {"title": "RCE verified", "description": "one-sentence gist of what you confirmed", "kind": "vuln", "data": {"host": "10.0.2.15", "cve": "CVE-2021-41773", "status": "exploited"}, "doc": "optional detailed markdown: exact commands run, output, evidence", "deviations": [{"planned": "...", "actual": "...", "reason": "..."}]}}
 ```
 
 `kind`/`data` are optional but strongly recommended — they make the fact
@@ -85,7 +85,7 @@ plan during execution, record each deviation. Omit the field entirely if you
 followed the plan as stated.
 
 Each node has THREE documentation layers — use them correctly:
-- **`title`** (REQUIRED) — a short (2–10 字) human-readable label in the SAME language as the goal (中文 goal → 中文 title). Concrete: "端口已扫", "弱口令确认", "RCE已验证", "flag已提交". Never paste the description into it.
+- **`title`** (REQUIRED) — a short (2–10 chars) human-readable label in the SAME language as the goal (e.g. a Chinese goal → a Chinese title). Concrete: "ports scanned", "weak creds confirmed", "RCE verified", "flag submitted". Never paste the description into it.
 - **`description`** (REQUIRED) — a ONE-sentence gist / summary of the confirmed result, WITH the key evidence inline (host:port, CVE id, credential). Shown in `sapper graph` and injected into prompts by default.
 - **`doc`** (OPTIONAL, recommended) — detailed markdown: the exact commands you ran and their output, request/response evidence, artifact paths (pcap, dumps, shells), constraints, gotchas. The next agent reads it via `sapper doc <id>`. Put the long evidence here, NOT in description.
 
