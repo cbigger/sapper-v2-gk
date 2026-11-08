@@ -236,28 +236,8 @@ json.dump(d, open(path, "w"))
 PYTRUST
 }
 
-# ---- tmux primitives (verbatim from tmux-drive.sh) ---------------------------
-pane_text() { tmux capture-pane -pt "$SESSION:$1" 2>/dev/null; }
-
-send_literal() {  # send_literal <window> <text> [enter]
-  tmux send-keys -t "$SESSION:$1" -l -- "$2"
-  sleep 0.5
-  [[ "${3:-enter}" == "enter" ]] && tmux send-keys -t "$SESSION:$1" Enter
-}
-
-accept_dialogs() {  # accept_dialogs <window> <pane> -> 0 if a dialog was dismissed
-  local win="$1" pane="$2"
-  if printf '%s' "$pane" | grep -qE 'Enter to confirm|Yes, I accept|I accept'; then
-    # Aim by the ❯ focus marker: security dialogs default-focus "No, exit",
-    # so a bare Enter CHOOSES NO. Only move+confirm when focus is off Yes.
-    if printf '%s' "$pane" | grep -qE '❯[^\n]*No, exit'; then
-      tmux send-keys -t "$SESSION:$win" Down; sleep 0.4
-    fi
-    tmux send-keys -t "$SESSION:$win" Enter; sleep 1.5
-    return 0
-  fi
-  return 1
-}
+# ---- tmux primitives (shared with worker.sh; see tmux-lib.sh) ----------------
+source "$(dirname "${BASH_SOURCE[0]}")/tmux-lib.sh"
 
 # ---- relaunch machinery ------------------------------------------------------
 sync_session_env() {  # tmux panes inherit the SESSION environment, NOT this
