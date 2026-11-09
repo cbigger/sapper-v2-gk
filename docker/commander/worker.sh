@@ -48,8 +48,15 @@ DEF_MINUTES=10
 SAPPER="${SAPPER_BIN:-sapper}"
 ACT_FILE="$ROOT/.worker-activity.tsv"
 PANE_ENV_DIR="$ROOT/pane-env"
+# per-pane output sidecar: non-interactive workers (-p / sapper auto / codex
+# exec) tee their stdout+stderr here so the commander reads a COMPLETE,
+# untruncated log instead of screen-scraping capture-pane (which only sees the
+# visible scrollback). The TUI panes have no sidecar — their results already
+# flow through the fact graph, and teeing a full-screen redraw stream would
+# only capture ANSI noise. peek falls back to capture-pane when no sidecar.
+PANE_LOG_DIR="$ROOT/pane-logs"
 NOW() { date +%s; }
-mkdir -p "$ROOT" "$PANE_ENV_DIR"
+mkdir -p "$ROOT" "$PANE_ENV_DIR" "$PANE_LOG_DIR"
 
 log() { printf '[worker] %s\n' "$*" | tee -a "$LOG" >&2; }
 die() { local rc=$1; shift; printf '[worker] ERROR: %s\n' "$*" >&2; exit "$rc"; }
@@ -373,6 +380,8 @@ except Exception: pass' 2>/dev/null)
   # 4/5) the window (NO --continue: fresh session per pane; watchdog owns recovery)
   sync_session_env
   tmux kill-window -t "$SESSION:$pane" 2>/dev/null
+  local logf="$PANE_LOG_DIR/$pane.log"
+  rm -f "$logf"   # fresh sidecar per (re)spawn; non-TUI commands tee into it
   # persist the pane's tier+gateway so watchdog relaunches keep the same brain.
   # RAW values, never %q: bash %q escapes the [1m] suffix -> '\\[1m\\' and
   # pane_model()'s sed would feed claude a backslashed model id. TUI missions
@@ -401,13 +410,16 @@ except Exception: pass' 2>/dev/null)
     if [[ "$engine" == codex ]]; then
       [[ -n "$mission" ]] || mission=$(default_mission "$code" "$addrs" "$primary")
       local esc_mission=${mission//\'/\\'\'}
+      # tee to the sidecar (complete log for the commander) AND the pane (live
+      # view for a human attach); the sentinel goes to both so watchdog
+      # liveness detection on capture-pane is unaffected.
       tmux new-window -d -t "$SESSION" -n "$pane" \
-        "cd $dir && DEEPSEEK_API_KEY='$DS_KEY' codex exec --skip-git-repo-check -c model_provider=deepseek-local -c model='$model' --dangerously-bypass-approvals-and-sandbox '$esc_mission' 2>&1; echo DRIVE_PANE_EXITED; exec sleep infinity"
+        "cd $dir && DEEPSEEK_API_KEY='$DS_KEY' codex exec --skip-git-repo-check -c model_provider=deepseek-local -c model='$model' --dangerously-bypass-approvals-and-sandbox '$esc_mission' 2>&1 | tee -a '$logf'; echo DRIVE_PANE_EXITED | tee -a '$logf'; exec sleep infinity"
       printf 'SPAWNED %s addrs=%s model=%s engine=codex\n' "$pane" "$addrs" "$model"
       return 0
     else
       tmux new-window -d -t "$SESSION" -n "$pane" \
-        "cd $dir && $gw_env SAPPER_MODEL='$model' $SAPPER --store $ROOT/$code/.sapper auto --minutes $minutes --skip-permissions 2>&1; echo DRIVE_PANE_EXITED; exec sleep infinity"
+        "cd $dir && $gw_env SAPPER_MODEL='$model' $SAPPER --store $ROOT/$code/.sapper auto --minutes $minutes --skip-permissions 2>&1 | tee -a '$logf'; echo DRIVE_PANE_EXITED | tee -a '$logf'; exec sleep infinity"
     fi
   fi
 
@@ -488,7 +500,7 @@ cmd_kill() {
     else
       log "kill: window $w already gone"
     fi
-    rm -f "$PANE_ENV_DIR/$w.env"
+    rm -f "$PANE_ENV_DIR/$w.env" "$PANE_LOG_DIR/$w.log"
   done
 
   if (( close )); then
@@ -517,7 +529,15 @@ cmd_peek() {
   [[ "$lines" =~ ^[0-9]+$ ]] || die 1 "peek: lines must be an integer"
   tmux has-session -t "$SESSION" 2>/dev/null || die 1 "tmux session '$SESSION' missing"
   window_exists "$pane" || die 1 "peek: no such pane '$pane'"
-  tmux capture-pane -p -t "$SESSION:$pane" 2>/dev/null | tail -n "$lines"
+  # non-interactive workers tee a complete log to the sidecar — read that (the
+  # full output survives, nothing truncates to the visible scrollback). TUI
+  # panes have no sidecar, so fall back to capture-pane (today's behavior).
+  local logf="$PANE_LOG_DIR/$pane.log"
+  if [[ -s "$logf" ]]; then
+    tail -n "$lines" "$logf"
+  else
+    tmux capture-pane -p -t "$SESSION:$pane" 2>/dev/null | tail -n "$lines"
+  fi
 }
 
 cmd_list() {
