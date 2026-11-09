@@ -11,12 +11,12 @@ Entry shape (kb/entries/kb001.json):
 
     {
       "id": "kb001",
-      "title": "SQL 注入 — 手工确认与绕过",
+      "title": "SQL injection — manual confirmation and bypass",
       "description": "one-line what this entry teaches",
       "detail": "markdown body: methodology, payloads, caveats",
       "commands": ["sqlmap -u 'http://t/?id=1' --batch --dbs"],
       "tags": ["sqli", "web"],
-      "source": "hacktricks / writeup URL / 经验",
+      "source": "hacktricks / writeup URL / experience",
       "created_at": "2026-10-15T…Z"
     }
 

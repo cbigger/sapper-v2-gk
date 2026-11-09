@@ -1015,7 +1015,7 @@ _RECALL_TOKEN_RE = re.compile(r"[\w一-鿿]+", re.UNICODE)
 
 def _recall_tokenize(text: str) -> list[str]:
     """Lowercase + Unicode-word/CJK tokenization. CJK each char is a token so
-    '空指针定位' splits into 4 tokens that match individually."""
+    '空指针定位' (a 4-character Chinese phrase) splits into 4 tokens that match individually."""
     if not text:
         return []
     out: list[str] = []
@@ -1952,11 +1952,11 @@ def _bench_prepare_graph(store: Store, challenge: dict, started: dict,
             store.add_fact(description=description, creator="arena", title=title,
                            kind=kind, data=data)
 
-    add("note", "题目描述", f"challenge {challenge.get('unique_code')}: "
+    add("note", "challenge description", f"challenge {challenge.get('unique_code')}: "
         f"{challenge.get('description') or '(no description)'}",
         {"challenge": str(challenge.get("unique_code")), "difficulty": str(challenge.get("difficulty"))})
     for addr in container_addrs:
-        add("host", "靶标", f"target container address {addr}",
+        add("host", "target", f"target container address {addr}",
             {"addr": addr, "challenge": str(challenge.get("unique_code"))})
     # record how many flags are needed
     store.add_hint(
@@ -3201,7 +3201,7 @@ def cmd_brainstorm_pick(args) -> int:
                 i["id"],
                 f"option abandoned in favor of {picked_id}",
                 "brainstorm-pick",
-                title="已弃用",
+                title="deprecated",
                 allow_unconfirmed=True,
             )
             abandoned.append(i["id"])
@@ -4251,7 +4251,7 @@ sapper capture <peer>             # read recent output from an authorized peer p
 ```
 
 ## three documentation layers (every node)
-1. **title** — short (2-10 字) human label, shown in the graph view.
+1. **title** — short (2-10 chars) human label, shown in the graph view.
 2. **description** — one-sentence gist. Injected into prompts by default.
 3. **doc** — detailed markdown (commands, paths, evidence). NOT in prompts by
    default; READ it with `sapper doc <id>` when you need the full context.
@@ -4319,7 +4319,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sp.add_argument("description", help="summary (one sentence) — the gist of this node")
     sp.add_argument("--title", "-t", default=None,
-                    help="short human title shown in the graph view (中文标题)")
+                    help="short human title shown in the graph view (use the goal's language)")
     sp.add_argument("--kind", "-k", default=None, choices=FACT_KINDS,
                     help="typed fact kind for offensive work")
     sp.add_argument("--data", "-d", default=None, action="append", metavar="KEY=VALUE",
@@ -4337,7 +4337,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--from", dest="from_", required=True, help="comma/space separated fact ids")
     sp.add_argument("description", help="summary (one sentence) — what this intent will do")
     sp.add_argument("--title", "-t", default=None,
-                    help="short human title shown in the graph view (中文标题)")
+                    help="short human title shown in the graph view (use the goal's language)")
     sp.add_argument("--doc", default=None,
                     help="detailed document body (markdown). For long text use --doc-file")
     sp.add_argument("--doc-file", default=None,
@@ -4442,7 +4442,7 @@ def build_parser() -> argparse.ArgumentParser:
             "token overlap + difflib fuzzy fallback; no embeddings."
         ),
     )
-    sp.add_argument("query", help="free-text task gist (中文 ok)")
+    sp.add_argument("query", help="free-text task gist (any language ok)")
     sp.add_argument("--limit", "-n", type=int, default=5,
                     help="max results (default: 5); must be >= 1")
     sp.add_argument("--kind", choices=["fact", "intent", "any"], default="any",
@@ -4464,7 +4464,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("id")
     sp.add_argument("--fact", required=True, help="the confirmed result text (summary)")
     sp.add_argument("--title", "-t", default=None,
-                    help="short human title shown in the graph view (中文标题)")
+                    help="short human title shown in the graph view (use the goal's language)")
     sp.add_argument("--kind", "-k", default=None, choices=FACT_KINDS,
                     help="typed fact kind for offensive work")
     sp.add_argument("--data", "-d", default=None, action="append", metavar="KEY=VALUE",

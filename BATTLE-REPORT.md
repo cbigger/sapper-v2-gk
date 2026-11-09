@@ -1,91 +1,91 @@
-# 泡泡爸军团 · 80.18 分全程战役复盘
+# Bubble-Dad Legion · Full After-Action Review of the 80.18-Point Campaign
 
-> 从 12:08 到 20:03，8 小时无人值守的完整过程还原 + 背后运行机理推测。
-> 数据来源：平台事件日志（94 条）、实时分数曲线（44 个数据点）、ds/glm 消耗记录。
-> 配套阅读：PREP-INTERVIEW.md（架构讲稿）。
-
----
-
-## 第一阶段：侦察与首杀（12:08 - 12:23）
-
-**过程**：12:08 任务开始，三路靶场同时启动（tch3-01/02/03）。7 分钟后首旗入账（Baudline +600），随后 Calx +300。开局 15 分钟 2 面旗。
-
-**背后机理**：指挥官启动后先做全局侦察（board 总览 + 题目描述扫描），按"易题优先"原则挑了三道开局。士兵（deepseek-flash）进靶场后执行标准流程：端口扫描 → 服务识别 → 漏洞匹配 → 利用 → 提交。首旗 7 分钟说明侦察分级准确——第一波挑的确实是软柿子。
-
-## 第二阶段：稳定爬坡（12:23 - 13:19）
-
-**过程**：每 10-20 分钟一面旗的稳定节奏。12:36 一分钟双旗（Aperture+Casemate），12:42 又是双旗（Cendrillon+Compositor）。一小时约 5 面。
-
-**背后机理**：这是"单兵执行期"——士兵各自打各自的题，指挥官每 60-90 秒巡一次板，发现谁闲了就派新题。双旗同落是因为两道同族题（相似漏洞类型）几乎同时被破。此阶段 glm-5.3 调用极少（约 96 次），全是指挥官的调度决策；ds-flash 承担了几乎全部解题消耗。
-
-## 第三阶段：第一次摔跤与换将（13:10 - 14:43）
-
-**过程**：13:10 Cumulo Identity Pivot 答题失败，30 秒后重试成功（+800 大旗）。随后遭遇瓶颈——Digital Shelf 从 13:19 啃到 14:43（84 分钟），期间三次查提示（均返回 null）。但同期其他战线照常进账（Demo Shop +800、EchoDeck +800）。
-
-**背后机理**：撞上了第一批硬题。失败后 30 秒重试成功，说明是 flag 格式/提交方式的小错而非解题方向错误。Digital Shelf 的 84 分钟静默是最考验信任的时刻——但 ds 消耗记录显示士兵一直在满负荷思考（没停摆），而且**指挥官没有干等**：它把其他资源继续投向能出分的题。这体现了多线并发的价值：卡一题不误全局。此阶段后期（约 14:10 起）glm-5.3 调用开始上升——**将军上场了**（决策表规定：某题卡 20-30 分钟即派旗舰模型强攻）。
-
-## 第四阶段：同族连锁大爆发（14:43 - 15:23）——本役转折点
-
-**过程**：Digital Shelf 破防（+500）的瞬间引爆连锁——40 分钟内连拿 12+ 面旗：File Ferry、Flat-File、Gene Forge、Jacquard（65 秒！）、Loomkeeper、Media Streamer、MetaLens、Logbook、Publishing（+700）、Pebblebox（55 秒！）、News Archive、PHANTASM、Quay（+700）。分数从 19.5 冲到 35.8，排名从 25 暴力拉到 15。
-
-**背后机理**：这是整个系统最核心的战术——**同族迁移（family transfer）**。指挥官发现题库中存在大量同构题（相似的 Web 应用模板，只是细节不同），当一道题的打法被验证后，它立刻通过事实图广播："这族题的通用解法是 X"。新士兵接题时先读图，直接带着成熟打法进场，跳过摸索期。**一道题的成本，解锁一整族的收益**——这是 40 分钟 12 旗的真相。
-
-## 第五阶段：要塞族攻坚（15:23 - 17:05）
-
-**过程**：撞上"Capsulehouse/Galehouse/Kilnhouse"等"X 要塞→Y 金库"同构系列——多阶段渗透题（需要完整攻击链：立足→提权→横移→取旗）。节奏明显变慢（每题 30-90 分钟），出现多次答题失败。期间 glm-5.3 调用从 96 次飙到 1000+（将军大规模参战）。16:20 左右回补了开局跳过的 04/06 题，开始"残值收割"。
-
-**背后机理**：这是全场最硬的骨头——TSecBench 报告里"多阶段渗透"域的行业成功率只有 29.5%。系统在此展现了完整的升级阶梯：士兵（flash）打 20 分钟 → 战术 msg 纠偏 → 加派 w2 换角度 → **派将军（旗舰+max effort）**。glm 消耗的暴涨（96→1000+）就是将军军团的作战痕迹。同时指挥官执行"残值收割"：回头重访早期跳过的题，用新积累的情报再挖一遍——04/06/19 都是这样补的旗。
-
-## 第六阶段：要塞族通杀（17:05 - 18:39）——第二次大爆发
-
-**过程**：要塞族打法成型后开始横扫：Cadastre +400+300+100、Kilnhouse 五连旗、Ledgerhouse +1100、Neonhouse +1700、Reelhouse +1000、Sailhouse +600、Saltern +500、Vatworks +1400。约 90 分钟吸走 7000+ 分。排名从第 5 冲到第 3。
-
-**背后机理**：与第四阶段同理但规模更大——要塞族虽然是多阶段题，但**彼此同构**（都是"门户→核心金库"的链式结构）。第一道要塞（Galehouse）花了一个半小时磨出通用链路，之后的同类题直接套用，边际成本极低。这验证了一个反直觉的事实：**磨刀期看起来慢，其实是回报最高的投资**。
-
-## 第七阶段：收官清账（18:39 - 20:03）
-
-**过程**：18:39 后新开靶场减少，转入已破题的残值挖掘。最后 40 分钟分数从 76.04 跳到 80.18（+4.14）。19:56 最后一道靶场关闭，最后 7 分钟静默。20:03 系统自动谢幕。
-
-**背后机理**：SKILL 的 endgame 纪律接管——最后 1/4 时间停止开新题（4 分钟内破新题概率极低），专职三件事：① 扫描所有事实图，确认每面已捕获的 flag 都已提交（捕获≠提交，漏交=白丢）；② 关闭所有平台实例（礼貌释放）；③ 指挥官写最终战役总结。**最后 4 分钟的"不动"是对账，不是偷懒**——80.18 和第二名的 79.29 只差 0.89 分，清账挖出的每一面残值旗都在为名次服务。
+> A complete reconstruction of the 8-hour unattended run from 12:08 to 20:03, plus informed inference about the machinery behind it.
+> Data sources: the platform event log (94 entries), the live score curve (44 data points), and the ds/glm consumption records.
+> Companion reading: PREP-INTERVIEW.md (the architecture briefing).
 
 ---
 
-## 贯穿全场的幕后系统
+## Phase 1: Recon and first blood (12:08 - 12:23)
 
-**Key 轮换**（全天多次）：glm 三把 key 轮流撞限流，watchdog 检测到额度错误后自动切换（同家族优先），切换后全军团凭据无缝迁移。士兵甚至感知不到换了枪。
+**What happened**: The task began at 12:08, with three ranges launched at once (tch3-01/02/03). Seven minutes later the first flag landed (Baudline +600), followed by Calx +300. Two flags in the opening 15 minutes.
 
-**任务书重发**（至少 3 次）：士兵崩溃重启后，watchdog 自动把它的原始任务书重发一遍（存档在 pane-env 里），确保新进程知道自己是干嘛的。
+**The machinery**: After launch, the commander does global recon first (board overview + challenge-description scan) and picks three openers by an "easy-first" principle. Once inside a range, the soldier (deepseek-flash) runs the standard flow: port scan → service identification → vulnerability matching → exploitation → submission. First flag in 7 minutes shows the recon triage was accurate — the first wave really did pick the soft targets.
 
-**指挥官的自我管理**：8 小时里指挥官经历了多次上下文压缩——每次感知到记忆压力，它就重写一份"交接文档"（commander-state.md），压缩后第一动作重读。这是它能连续调度 8 小时不糊涂的秘密。
+## Phase 2: Steady climb (12:23 - 13:19)
 
-**成本账**：ds-flash 约 110 元（主力消耗），glm 三把 key 若干（将军+指挥官）。每面旗平均成本约 2.4 元。
+**What happened**: A steady cadence of one flag every 10-20 minutes. 12:36 brought a double flag in one minute (Aperture + Casemate), and 12:42 another double (Cendrillon + Compositor). Roughly 5 flags in the hour.
+
+**The machinery**: This is the "lone-soldier execution" period — each soldier works its own challenge, while the commander patrols the board every 60-90 seconds and assigns a new challenge to anyone who goes idle. The simultaneous doubles happen because two same-family challenges (similar vulnerability types) are cracked almost at the same time. glm-5.3 calls are very few in this phase (about 96), all commander scheduling decisions; ds-flash carries almost all of the solving cost.
+
+## Phase 3: First stumble and swapping in the heavyweight (13:10 - 14:43)
+
+**What happened**: At 13:10 Cumulo Identity Pivot failed, then succeeded on a retry 30 seconds later (+800, a big flag). A bottleneck followed — Digital Shelf was chewed on from 13:19 to 14:43 (84 minutes), with three hint checks during that time (all returning null). But other fronts kept scoring as usual in the same window (Demo Shop +800, EchoDeck +800).
+
+**The machinery**: This is the first batch of hard challenges. Succeeding on a retry 30 seconds after failure shows it was a small flag-format/submission mistake, not a wrong solving direction. Digital Shelf's 84 minutes of silence was the moment that tested trust the most — but the ds consumption record shows the soldier was thinking at full load the whole time (no stall), and **the commander did not simply wait**: it kept pouring other resources into challenges that could score. This is the value of multi-track concurrency: being stuck on one challenge does not stall the whole effort. Late in this phase (from about 14:10) glm-5.3 calls begin to rise — **the general has entered the field** (the decision table dictates: once a challenge is stuck for 20-30 minutes, send in the flagship model for a forced assault).
+
+## Phase 4: Same-family chain explosion (14:43 - 15:23) — the turning point of the campaign
+
+**What happened**: The instant Digital Shelf broke (+500) it set off a chain — 12+ flags in 40 minutes: File Ferry, Flat-File, Gene Forge, Jacquard (65 seconds!), Loomkeeper, Media Streamer, MetaLens, Logbook, Publishing (+700), Pebblebox (55 seconds!), News Archive, PHANTASM, Quay (+700). The score jumped from 19.5 to 35.8, and the rank was forced from 25 up to 15.
+
+**The machinery**: This is the single most central tactic in the whole system — **family transfer**. The commander notices that the challenge set contains many isomorphic challenges (similar web-app templates differing only in details), and once one challenge's approach is validated it immediately broadcasts over the fact graph: "the general solution for this family is X." A new soldier reads the graph before taking a challenge and walks in with the mature approach already in hand, skipping the exploration phase. **The cost of one challenge unlocks the payoff of a whole family** — that is the truth behind 12 flags in 40 minutes.
+
+## Phase 5: Cracking the fortress family (15:23 - 17:05)
+
+**What happened**: Ran into the "Capsulehouse/Galehouse/Kilnhouse" isomorphic "X fortress → Y vault" series — multi-stage penetration challenges (needing a full attack chain: foothold → privilege escalation → lateral movement → flag capture). The cadence clearly slowed (30-90 minutes per challenge), with several failed attempts. glm-5.3 calls surged from 96 to 1000+ in this period (the general joining the fight at scale). Around 16:20 it went back to fill in the 04/06 challenges skipped at the start, beginning a "residual-value harvest."
+
+**The machinery**: These are the hardest bones of the whole event — the TSecBench report puts the industry success rate for the "multi-stage penetration" domain at only 29.5%. Here the system shows its full escalation ladder: soldier (flash) works 20 minutes → tactical msg course-correction → add w2 for a different angle → **send the general (flagship + max effort)**. The glm-consumption surge (96 → 1000+) is the operational footprint of the general corps. Meanwhile the commander runs "residual-value harvest": revisiting challenges skipped early and mining them again with newly accumulated intel — 04/06/19 were all filled in this way.
+
+## Phase 6: Sweeping the fortress family (17:05 - 18:39) — the second big explosion
+
+**What happened**: Once the fortress-family approach was set, the sweep began: Cadastre +400+300+100, a five-flag run on Kilnhouse, Ledgerhouse +1100, Neonhouse +1700, Reelhouse +1000, Sailhouse +600, Saltern +500, Vatworks +1400. About 7000+ points soaked up in roughly 90 minutes. Rank climbed from 5th to 3rd.
+
+**The machinery**: Same principle as Phase 4 but at larger scale — the fortress challenges are multi-stage, but **isomorphic to one another** (all a chained "portal → core vault" structure). The first fortress (Galehouse) took an hour and a half to grind out the general route; later challenges of the same kind just reused it, at very low marginal cost. This confirms a counter-intuitive fact: **the sharpening phase looks slow, but it is the highest-return investment**.
+
+## Phase 7: Closing out and reconciling the books (18:39 - 20:03)
+
+**What happened**: After 18:39, fewer new ranges were opened, shifting to residual-value mining on already-cracked challenges. In the final 40 minutes the score jumped from 76.04 to 80.18 (+4.14). The last range closed at 19:56, with the final 7 minutes silent. The system bowed out automatically at 20:03.
+
+**The machinery**: The SKILL endgame discipline takes over — in the final quarter of the time it stops opening new challenges (the chance of cracking a new one in 4 minutes is very low) and focuses on three things: (1) scan every fact graph to confirm that each captured flag has been submitted (captured ≠ submitted; a missed submission is a wasted flag); (2) close all platform instances (a courteous release); (3) have the commander write the final campaign summary. **The "stillness" of the last 4 minutes is reconciliation, not slacking** — 80.18 vs the runner-up's 79.29 is only 0.89 points apart, and every residual-value flag dug out in the reconciliation served the ranking.
 
 ---
 
-## 十条可迁移的经验
+## The behind-the-scenes systems running throughout
 
-1. **共享记忆（事实图）是多智能体的地基**——没有它，每个 AI 都是失忆的独行者
-2. **同族迁移是最大的得分杠杆**——一题破，全族杀
-3. **分层用脑**——旗舰做决策和攻坚，轻量做执行，成本和质量的帕累托最优
-4. **升级要有明文军规**——"卡 20 分钟派将军"比"看情况决定"可靠一百倍
-5. **卡壳不等于死机**——消耗记录证明静默期它一直在思考
-6. **收官清账比赶工值钱**——最后的对账挖出了 4 分，恰好是夺冠差距的 4 倍
-7. **守护层零策略**——保活的归保活，决策的归决策，混了就乱
-8. **失败要分层处理**——限流换 key、崩溃重启、硬题换将，各走各的道
-9. **提示要前置**——开题先查免费提示（虽然这次比赛 hint 全是 null，但方法论对）
-10. **磨刀期不要慌**——84 分钟的静默后面跟着 40 分钟 12 旗
+**Key rotation** (many times across the day): the three glm keys took turns hitting rate limits; after the watchdog detected a quota error it switched automatically (same-family first), and after the switch the whole legion's credentials migrated seamlessly. The soldiers did not even notice their weapon had been swapped.
+
+**Task-brief resend** (at least 3 times): after a soldier crashed and restarted, the watchdog automatically re-sent its original task brief (archived in pane-env), making sure the new process knew what it was there to do.
+
+**The commander's self-management**: over the 8 hours the commander went through several context compactions — every time it sensed memory pressure it rewrote a "handoff document" (commander-state.md), and re-reading that was its first action after compaction. This is the secret to scheduling for 8 straight hours without losing the thread.
+
+**Cost ledger**: ds-flash about ¥110 (the main consumption), plus some across the three glm keys (general + commander). Average cost per flag about ¥2.4.
 
 ---
 
-## 最终成绩单
+## Ten transferable lessons
+
+1. **Shared memory (the fact graph) is the foundation of a multi-agent system** — without it, every AI is an amnesiac loner.
+2. **Family transfer is the biggest scoring lever** — crack one, kill the whole family.
+3. **Tiered use of brains** — the flagship does decisions and hard assaults, the lightweight does execution: the Pareto optimum of cost and quality.
+4. **Escalation needs written rules of engagement** — "send the general after 20 minutes stuck" is a hundred times more reliable than "decide as it goes."
+5. **Stuck does not mean crashed** — the consumption record proves it was thinking the whole silent stretch.
+6. **Closing-out reconciliation beats rushing** — the final reconciliation dug out 4 points, exactly four times the winning margin.
+7. **Zero strategy in the guardian layer** — keep-alive stays keep-alive, decisions stay decisions; mix them and it gets chaotic.
+8. **Handle failures in tiers** — rate limit swaps the key, crash restarts, hard challenge swaps the model: each on its own track.
+9. **Front-load the hints** — check the free hint before working a challenge (the hints were all null this time, but the methodology holds).
+10. **Don't panic in the sharpening phase** — 84 minutes of silence was followed by 12 flags in 40 minutes.
+
+---
+
+## Final scorecard
 
 ```
-分数：80.18 / 100（33800 原始分中的 27078）
-排名：50 支已出分队伍第 1
-破题：63 题中 36+ 题，约 45 面 flag
-时长：475 分钟完全无人值守
-停摆：零。崩溃自动恢复，限流自动轮换，全程无人工干预
-峰值效率：26 分/小时（全场最高斜率）
-总成本：约 110 元 API 调用
-从原型到参赛：约 24 小时开发迭代
+Score: 80.18 / 100 (27078 of 33800 raw points)
+Rank: 1st among 50 teams that scored
+Solved: 36+ of 63 challenges, about 45 flags
+Duration: 475 minutes, fully unattended
+Downtime: zero. Auto-recovery on crash, auto-rotation on rate limit, no manual intervention throughout
+Peak efficiency: 26 points/hour (the steepest slope of the event)
+Total cost: about ¥110 in API calls
+From prototype to competition: about 24 hours of development iteration
 ```
